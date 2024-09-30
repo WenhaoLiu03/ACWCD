@@ -1,0 +1,53 @@
+backbone:
+  config: mit_b1
+  stride: [4, 2, 2, 1]
+  comments: None
+
+dataset:
+  root_dir: /root/autodl-tmp/data/DSIFN
+  name_list_dir: datasets/DSIFN
+  num_classes: 2
+  crop_size: 256
+  rescale_range: [0.5, 2.0]
+  dilations: [1, 2, 3, 4]
+
+work_dir:
+  dir: work_dir_DSIFN
+  ckpt_dir: checkpoints
+  pred_dir: predictions
+  logger_dir: logger
+  segs_dir: segs
+  tb_logger_dir: tb_logger
+
+train:
+  split: train
+  batch_size: 8
+  max_iters: 20000
+  cam_iters: 4000
+  eval_iters: 1000
+  log_iters: 1000
+  samples_per_gpu: 1
+
+cam:
+  bkg_score: 0.50
+  scales: [1, 0.5, 1.5, 2.0]
+
+val:
+  split: val
+  bacth_size: 1
+
+test:
+  split: test
+  batch_size: 1
+
+optimizer:
+  type: AdamW
+  learning_rate: 4e-5
+  betas: [0.9, 0.999]
+  weight_decay: 0.01
+
+scheduler:
+  warmup_iter: 1500
+  warmup_ratio: 1e-6
+  power: 1.0
+
