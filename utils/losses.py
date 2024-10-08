@@ -23,7 +23,7 @@ def Lc(Predn_final, yn_cls, alpha2=1.0):
 
     return lc
 
-def cploss(yn_cls, Predn_final, alpha1=1.0, alpha2=1.0):
+def cploss(yn_cls, Predn_final, alpha1=0.9, alpha2=0.9):
 
     luc = Luc(Predn_final, yn_cls, alpha1)
 
