@@ -5,7 +5,7 @@
 
 - Python >= 3.8, pytorch >= 1.12.0
 
-## Pipeline of the ACWCD
+## Framework of the ACWCD
 
 ![ ](assest/1.png)
 
