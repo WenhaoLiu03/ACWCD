@@ -260,26 +260,26 @@ def train(cfg):
 
         cls, segs, _ = acwcd(inputs_A, inputs_B, seg_detach=args.seg_detach)
 
+        # Initial CAM and Change attention
         cams, change_attn = multi_scale_cam_with_change_attn(acwcd, inputs_A=inputs_A, inputs_B=inputs_B, scales=cfg.cam.scales)
-
         valid_cam, pseudo_label = cam_to_label(cams.detach(), cls_label=cls_labels, img_box=img_box, ignore_mid=True, cfg=cfg)
-
         valid_cam_resized = F.interpolate(valid_cam, size=(infer_size, infer_size), mode='bilinear', align_corners=False)
 
+        # Random Walk Propagation
+        # AR Module Propagation under CP Constraints
+        # Final Pseudo-Label Generation
         after_walk_cam = propagte_cam_with_change_attn(valid_cam_resized, ct=change_attn.detach().clone(), mask=mask_infer,
                                                        cls_labels=cls_labels, bkg_score=cfg.cam.bkg_score)
-
         after_walk_cam = F.interpolate(after_walk_cam, size=pseudo_label.shape[1:], mode='bilinear', align_corners=False)
 
         bkg_cls = bkg_cls.to(cams.device)
         _cls_labels = torch.cat((bkg_cls, cls_labels), dim=1)
-
         refined_after_walk_cam = align_ref_cam(par, inputs_denorm, cams=after_walk_cam, labels=_cls_labels, img_box=img_box)
 
         final_pseudo_labels = refined_after_walk_cam.argmax(dim=1)
 
+        # Visualization of Propagated Threshold CAM and Initial CAM
         refined_after_walk_cam1 = refined_after_walk_cam[:, 0, :, :].unsqueeze(1)
-
         refined_after_walk_cam2 = refined_after_walk_cam[:, 1, :, :].unsqueeze(1)
 
         refined_after_walk_cam1 = normalize(refined_after_walk_cam1)
@@ -292,14 +292,17 @@ def train(cfg):
         if n_iter <= 8000:
             final_pseudo_labels = initial_pseudo_labels
 
+
         seg_loss = F.cross_entropy(segs, final_pseudo_labels.type(torch.long), ignore_index=255)
 
+        # Image-level classification loss
         lp_loss = F.binary_cross_entropy_with_logits(cls, cls_labels)
 
         segs_end = torch.argmax(segs, dim=1)
 
-        cp_loss1 = cploss(cls_labels, final_pseudo_labels)
-        cp_loss2 = cploss(cls_labels, segs_end)
+        # Change prior loss(CP_loss)
+        cp_loss1 = cploss(cls_labels, final_pseudo_labels, alpha1=0.9, alpha2=0.9) # Calculation of Pseudo-Labels
+        cp_loss2 = cploss(cls_labels, segs_end, alpha1=0.9, alpha2=0.9) # Calculation of Segmentation Results
 
         if n_iter <= cfg.train.cam_iters:
             loss = 1.0 * lp_loss + 0.0 * cp_loss1 + 0.0 * cp_loss2 + 0.0 * seg_loss
