@@ -260,7 +260,7 @@ def train(cfg):
 
         cls, segs, _ = acwcd(inputs_A, inputs_B, seg_detach=args.seg_detach)
 
-        # Initial CAM and Change attention
+        # Generation of Initial CAM and Change Attention
         cams, change_attn = multi_scale_cam_with_change_attn(acwcd, inputs_A=inputs_A, inputs_B=inputs_B, scales=cfg.cam.scales)
         valid_cam, pseudo_label = cam_to_label(cams.detach(), cls_label=cls_labels, img_box=img_box, ignore_mid=True, cfg=cfg)
         valid_cam_resized = F.interpolate(valid_cam, size=(infer_size, infer_size), mode='bilinear', align_corners=False)
